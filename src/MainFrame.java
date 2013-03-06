@@ -15,12 +15,6 @@ import javax.swing.JTextField;
 
 public class MainFrame extends JFrame {
 	public static void main(String[] args) {
-		/*below is a test*/
-		/*Calendar calendar = Calendar.getInstance();
-		int yearNow = calendar.get(Calendar.YEAR);
-		int monthNow = calendar.get(Calendar.MONTH);
-		int dayNow = calendar.get(Calendar.DATE);
-		System.out.println(yearNow+"year"+monthNow+"month"+dayNow+"day");*/
 		final JFrame frame = new JFrame("News Downloader");
 		final JTextField yearField = new JTextField(4);
 		yearField.setHorizontalAlignment(JTextField.RIGHT);
@@ -127,22 +121,9 @@ public class MainFrame extends JFrame {
 					if(!checkDate(yearNow, monthNow, dayNow, yearInput, monthInput, dayInput))
 						JOptionPane.showMessageDialog(null,"日期输入有误，请重新输入","Warning!",JOptionPane.ERROR_MESSAGE);
 					else {
-						//在下载路径下创建文件夹
-						String fileName = "" + yearInput;
-						if(monthInput < 10)
-							fileName += "0" + monthInput;
-						else
-							fileName += monthInput;
-						if(dayInput < 10)
-							fileName += "0" + dayInput;
-						else
-							fileName += dayInput;
-						String path = dirField.getText() + "\\" + fileName;
-						File file = new File(path);
-						if(!file.mkdir())
-							JOptionPane.showMessageDialog(null,"创建文件夹失败","Warning!",JOptionPane.ERROR_MESSAGE);
-						
-						//下面根据日期下载人民网上对应日期的所有资料
+						Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
+						if(spider.beginDownload())
+							JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
 					}
 				}
 			}
@@ -166,7 +147,8 @@ public class MainFrame extends JFrame {
 		/*add actionListen here*/
 		browse.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser fileChooser = new JFileChooser("D:\\");
+				/*浏览下载目录，默认在C盘下*/
+				JFileChooser fileChooser = new JFileChooser("C:\\");
 		    	fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		        int returnVal = fileChooser.showOpenDialog(fileChooser);
 		        if(returnVal == JFileChooser.APPROVE_OPTION){       
