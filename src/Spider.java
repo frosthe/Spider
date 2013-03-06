@@ -45,8 +45,10 @@ public class Spider {
 		path = dir + "\\" + fileName;
 		File file = new File(path);
 		//在下载目录下生成对应日期的一个文件夹
-		if(file.exists())
+		if(file.exists()){
 			JOptionPane.showMessageDialog(null,"文件夹已存在","Warning!",JOptionPane.ERROR_MESSAGE);
+			System.exit(-1);
+		}
 		if(!file.mkdir())
 			JOptionPane.showMessageDialog(null,"创建文件夹失败","Warning!",JOptionPane.ERROR_MESSAGE);
 		
@@ -212,10 +214,10 @@ public class Spider {
             
             /*解析源代码内容，将正文保存在一个txt文件里*/
             //TODO
-            File file = new File(topicPath+"\\"+topic+".txt");
+            /*File file = new File(topicPath+"\\"+topic+".txt");
             PrintWriter output = new PrintWriter(file);
             output.println("success!");
-            output.close();
+            output.close();*/
 			
 		} catch (IOException e) {
 			e.printStackTrace();
