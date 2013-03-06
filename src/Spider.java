@@ -7,6 +7,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 
@@ -29,7 +31,6 @@ public class Spider {
 	private String topicUrl;	//专题url前面一部分
 	
 	public Spider(String dir,int year,int month,int day) {
-		//在下载路径下创建文件夹
 		yearString = "" + year;
 		if(month < 10)
 			monthString = "0" + month;
@@ -43,20 +44,26 @@ public class Spider {
 		String fileName = yearString + monthString + dayString;
 		
 		path = dir + "\\" + fileName;
-		File file = new File(path);
-		//在下载目录下生成对应日期的一个文件夹
-		if(file.exists()){
-			JOptionPane.showMessageDialog(null,"文件夹已存在","Warning!",JOptionPane.ERROR_MESSAGE);
-			System.exit(-1);
-		}
-		if(!file.mkdir())
-			JOptionPane.showMessageDialog(null,"创建文件夹失败","Warning!",JOptionPane.ERROR_MESSAGE);
 		
 		StringBuffer stringBuffer = new StringBuffer();
 		stringBuffer.append("http://paper.people.com.cn/rmrb/html/");
 		stringBuffer.append(year+"-"+monthString+"/"+dayString+"/nw.D110000renmrb_"+yearString+monthString+dayString);
 		topicUrl = stringBuffer.toString();
+	}
+	public boolean Initial(){
+		File file = new File(path);
+		//在下载目录下生成对应日期的一个文件夹
+		if(file.exists()){
+			JOptionPane.showMessageDialog(null,"文件夹已存在","Warning!",JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		if(!file.mkdir()){
+			JOptionPane.showMessageDialog(null,"创建文件夹失败","Warning!",JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
 		
+		return true;
 	}
 	
 	private int getNumberOfPages(){
@@ -90,15 +97,12 @@ public class Spider {
             String sourceCode = contentBuffer.toString();
             
             /*得到源代码后，通过匹配获得版块总数*/
-            String matchingStr = "href=nbs.D110000renmrb";
-            int pos = 0;
-            while(pos != -1){
-            	pos = sourceCode.indexOf(matchingStr, pos);
-            	if(pos != -1){
-            		pageNum++;
-            		pos = pos + matchingStr.length();
-            	}
-            }
+            Pattern p = Pattern.compile("href=nbs.D110000renmrb");
+            Matcher matcher = p.matcher(sourceCode);
+            while(matcher.find())
+            	pageNum++;
+            
+            
 		} catch (IOException e) {
 			e.printStackTrace();
 		}finally{
@@ -134,6 +138,13 @@ public class Spider {
 			con.setConnectTimeout(60000);  
             con.setReadTimeout(60000); 
             
+            //貌似页面请求的时候经常出错，会跳转到付费页面
+            int response = con.getResponseCode();
+            if(response > 400){
+            	JOptionPane.showMessageDialog(null, "Error " + response +"\n这个网页多次访问貌似会跳转到付费页面\n导致无法继续获取内容" ,"Sorry",JOptionPane.OK_OPTION);
+            	System.exit(-1);
+            }
+            
             BufferedReader input = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String str;
             
@@ -145,15 +156,20 @@ public class Spider {
             String sourceCode = contentBuffer.toString();
             
             //得到源码后，通过匹配，获得专题数
+            //TODO
             String matchingStr = "href=nw.D110000renmrb";
-            int pos = 0;
+            /*int pos = 0;
             while(pos != -1){
             	pos = sourceCode.indexOf(matchingStr, pos);
             	if(pos != -1){
             		doubleTopicNum++;
             		pos = pos + matchingStr.length();
             	}
-            }
+            }*/
+            Pattern p = Pattern.compile("href=nw.D110000renmrb");
+            Matcher matcher = p.matcher(sourceCode);
+            while(matcher.find())
+            	doubleTopicNum++;
             
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -202,6 +218,13 @@ public class Spider {
 			con.setConnectTimeout(60000);  
             con.setReadTimeout(60000); 
             
+            //貌似页面请求的时候经常出错，会跳转到付费页面
+            int response = con.getResponseCode();
+            if(response > 400){
+            	JOptionPane.showMessageDialog(null, "Error " + response +"\n这个网页多次访问貌似会跳转到付费页面\n导致无法继续获取内容" ,"Sorry",JOptionPane.OK_OPTION);
+            	System.exit(-1);
+            }
+            
             BufferedReader input = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String str;
             
@@ -213,11 +236,22 @@ public class Spider {
             String sourceCode = content.toString();
             
             /*解析源代码内容，将正文保存在一个txt文件里*/
-            //TODO
-            /*File file = new File(topicPath+"\\"+topic+".txt");
+            /*标题在<h1></h1>标签中
+             * 主要内容在<div class="c_c"></div>中
+             * */
+            String title = ""+ topic;
+            Pattern pattern = Pattern.compile("<h1>.*</h1>");
+            Matcher matcher = pattern.matcher(sourceCode);
+            if(matcher.find()){
+            	title = matcher.group();
+            	//提取出标题内容
+            	title = title.substring(4, title.length()-5);
+            }
+            //网页时utf-8的，windows的文件名编码是utf-16，出现乱码
+            File file = new File(topicPath+"\\"+title+".txt");
             PrintWriter output = new PrintWriter(file);
-            output.println("success!");
-            output.close();*/
+            output.println(title);
+            output.close();
 			
 		} catch (IOException e) {
 			e.printStackTrace();

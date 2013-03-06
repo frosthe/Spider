@@ -122,8 +122,10 @@ public class MainFrame extends JFrame {
 						JOptionPane.showMessageDialog(null,"日期输入有误，请重新输入","Warning!",JOptionPane.ERROR_MESSAGE);
 					else {
 						Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
-						if(spider.beginDownload())
-							JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
+						if(spider.Initial()){
+							if(spider.beginDownload())
+								JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
+						}
 					}
 				}
 			}
