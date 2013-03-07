@@ -15,16 +15,24 @@ import javax.swing.JTextField;
 
 public class MainFrame extends JFrame {
 	public static void main(String[] args) {
-		final JFrame frame = new JFrame("News Downloader");
+		Calendar calendar = Calendar.getInstance();
+		final int yearNow = calendar.get(Calendar.YEAR);
+		final int monthNow = calendar.get(Calendar.MONTH) + 1;
+		final int dayNow = calendar.get(Calendar.DATE);
+		final JFrame frame = new JFrame("人民日报新闻下载器");
 		final JTextField yearField = new JTextField(4);
 		yearField.setHorizontalAlignment(JTextField.RIGHT);
+		yearField.setText(yearNow+"");
 		final JTextField monthField = new JTextField(4);
 		monthField.setHorizontalAlignment(JTextField.RIGHT);
+		monthField.setText(monthNow+"");
 		final JTextField dayField = new JTextField(4);
 		dayField.setHorizontalAlignment(JTextField.RIGHT);
+		dayField.setText(""+dayNow);
 		final JButton start = new JButton("下载");
 		final JTextField dirField = new JTextField(22);
 		dirField.setEditable(false);
+		dirField.setText("C:\\");
 		final JButton browse = new JButton("浏览");
 		
 		
@@ -111,10 +119,6 @@ public class MainFrame extends JFrame {
 				else if(yearField.getText().equals("")|| monthField.getText().equals("")|| dayField.getText().equals(""))
 					JOptionPane.showMessageDialog(null,"请输入日期","Warning!",JOptionPane.ERROR_MESSAGE);
 				else{
-					Calendar calendar = Calendar.getInstance();
-					int yearNow = calendar.get(Calendar.YEAR);
-					int monthNow = calendar.get(Calendar.MONTH) + 1;
-					int dayNow = calendar.get(Calendar.DATE);
 					int yearInput = Integer.parseInt(yearField.getText());
 					int monthInput = Integer.parseInt(monthField.getText());
 					int dayInput = Integer.parseInt(dayField.getText());
