@@ -1,7 +1,10 @@
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
@@ -109,7 +112,7 @@ public class Spider {
            sourceCode = contentBuffer.toString();
            
 		} catch (IOException e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "连接超时","Sorry",JOptionPane.OK_OPTION);
 		}finally{
 			con.disconnect();
 		}
@@ -207,7 +210,6 @@ public class Spider {
 		
 		/*解析源代码内容，将正文保存在一个txt文件里
          *标题在<h1></h1>标签中
-         *主要内容在<div class="c_c"></div>中
          *正文在<!--enpcontent--><!--/enpcontent-->中
          * */
         String title = null;
@@ -246,12 +248,56 @@ public class Spider {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+		
 		//将图片都下载下来,topicPath+"xxx.jpg"
-		//TODO
+		String regex = "<IMG src=\".*?jpg\">";
+		pattern = Pattern.compile(regex);
+		matcher = pattern.matcher(sourceCode);
+		//"http://paper.people.com.cn/rmrb/res/1/20130306/1362510063062_1.jpg"
+		int count = 0;
+		while(matcher.find()){
+			count++;
+			String picUrl = matcher.group();
+			String[] temp = picUrl.split("/res/");
+			picUrl = "http://paper.people.com.cn/rmrb/res/" + temp[1].substring(0,temp[1].length()-2);
+			System.out.println(picUrl);
+			String picPath = topicPath + count + ".jpg";
+			File imgToFile = new File(picPath);
+			try {
+				FileOutputStream out = new FileOutputStream(imgToFile);
+				out.write(getPic(picUrl));
+				out.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		
 		return true;
 	}
 	
+    private byte[] getPic(String fileUrl) throws Exception  
+    {  
+        URL url = new URL(fileUrl);  
+        HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();  
+        httpConn.connect();  
+        InputStream cin = httpConn.getInputStream();  
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();  
+        byte[] buffer = new byte[1024];  
+        int len = 0;  
+        while ((len = cin.read(buffer)) != -1) {  
+            outStream.write(buffer, 0, len);  
+        }  
+        cin.close();  
+        byte[] fileData = outStream.toByteArray();  
+        outStream.close();  
+        return fileData;  
+    } 
+    
 	public boolean beginDownload(){
 		int pageNum = getNumberOfPages();
 		
