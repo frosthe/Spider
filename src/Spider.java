@@ -1,7 +1,3 @@
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -18,7 +14,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 
@@ -39,10 +34,12 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
 	private String dayString;
 	private int currentPage;
 	private int totalPage;
+	private JProgressBar bar;
 	private String path;		//生成的最顶层文件夹的路径
 	private String topicUrl;	//专题url前面一部分
 
-	public Spider(String dir,int year,int month,int day) {
+	public Spider(String dir,int year,int month,int day,JProgressBar bar) {
+		this.bar = bar;
 		currentPage = 0;
 		totalPage = 0;
 		yearString = "" + year;
@@ -93,9 +90,13 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
             
           //貌似页面请求的时候经常出错，会跳转到付费页面
             int response = con.getResponseCode();
-            if(response > 400){
-            	JOptionPane.showMessageDialog(null, "Error " + response +"\n下载之前内容会跳转到付费页面\n导致无法继续获取内容\n或者今天新闻尚未生成" ,"Sorry",JOptionPane.OK_OPTION);
-            	System.exit(-1);
+            if(response == 403){
+            	JOptionPane.showMessageDialog(null, "Error " + response +"\n下载之前内容会跳转到付费页面\n导致无法继续获取内容" ,"Sorry",JOptionPane.OK_OPTION);
+            	bar.setStringPainted(false);
+            	bar.setValue(0);
+            }
+            if(response == 404){
+            	JOptionPane.showMessageDialog(null, "Error " + response +"\n无法访问，当天新闻不存在" ,"Sorry",JOptionPane.OK_OPTION);
             }
            /*while(response > 400){
             	con.disconnect();
@@ -123,7 +124,7 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
            sourceCode = contentBuffer.toString();
            
 		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null, "连接超时","Sorry",JOptionPane.OK_OPTION);
+			JOptionPane.showMessageDialog(null, "连接失败","Sorry",JOptionPane.OK_OPTION);
 		}finally{
 			con.disconnect();
 		}
@@ -208,7 +209,7 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
 			topicPath = path + "\\" + page;
 		}
 		
-		System.out.println(topicPageUrl);
+		//System.out.println(topicPageUrl);
 		
 		URL url = null;
 		try {
@@ -232,7 +233,7 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
         	title = title.substring(4, title.length()-5);
         }
         title = title.replaceAll("<BR/>", " ").trim();
-        System.out.println(title);
+        //System.out.println(title);
         
         topicPath += "\\" + title;
         makeFile(topicPath);
@@ -255,7 +256,7 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
 	        }
 	        output.write(content);
 	        output.close();
-	        System.out.println("content downloaded");
+	        //System.out.println("content downloaded");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -271,10 +272,10 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
 			String picUrl = matcher.group();
 			String[] temp = picUrl.split("/res/");
 			picUrl = "http://paper.people.com.cn/rmrb/res/" + temp[1].substring(0,temp[1].length()-2);
-			System.out.println(picUrl);
+			//System.out.println(picUrl);
 			String picPath = topicPath + count + ".jpg";
 			File imgToFile = new File(picPath);
-			System.out.println("pic downloaded");
+			//System.out.println("pic downloaded");
 			try {
 				FileOutputStream out = new FileOutputStream(imgToFile);
 				out.write(getPic(picUrl));
@@ -311,30 +312,33 @@ public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
     } 
     
     protected Integer doInBackground(){
-		Initial();
-		
-		for(int i = 1;i <= totalPage;i++){
-			int topicNum = getNumberOfTopics(i);
-			String filePathString = null;
-			if(i < 10)
-				filePathString = path + "\\" + "0" + i;
-			else
-				filePathString = path + "\\" + i;
-			
-			if(!makeFile(filePathString)){
-				System.err.println("fail to make file!");
-				System.exit(-1);
-			}
-			
-			for(int k = 1;k <= topicNum;k++){
-				if(!topicParser(i, k)){
-					System.err.println("topicParser error!");
+		if(Initial()){
+			bar.setStringPainted(true);
+			for(int i = 1;i <= totalPage;i++){
+				int topicNum = getNumberOfTopics(i);
+				String filePathString = null;
+				if(i < 10)
+					filePathString = path + "\\" + "0" + i;
+				else
+					filePathString = path + "\\" + i;
+				
+				if(!makeFile(filePathString)){
+					System.err.println("fail to make file!");
+					System.exit(-1);
 				}
+				
+				for(int k = 1;k <= topicNum;k++){
+					if(!topicParser(i, k)){
+						System.err.println("topicParser error!");
+					}
+				}
+				currentPage++;
+				setProgress(100 * currentPage / totalPage);
 			}
-			currentPage++;
-			setProgress(100 * currentPage / totalPage);
+			JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
 		}
-		JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
+		
+		
 		return 0;
 	}
     

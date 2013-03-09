@@ -4,9 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.util.Calendar;
-
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -40,7 +38,7 @@ public class MainFrame extends JFrame {
 		final JProgressBar bar = new JProgressBar(JProgressBar.HORIZONTAL);
 		bar.setValue(0);
 		bar.setMaximum(100);
-		bar.setStringPainted(true);
+		
 		
 		
 		
@@ -133,7 +131,7 @@ public class MainFrame extends JFrame {
 					if(!checkDate(yearNow, monthNow, dayNow, yearInput, monthInput, dayInput))
 						JOptionPane.showMessageDialog(null,"日期输入有误，请重新输入","Warning!",JOptionPane.ERROR_MESSAGE);
 					else {
-						Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
+						Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput,bar);
 						spider.addPropertyChangeListener(new PropertyChangeListener() {
 							public void propertyChange(PropertyChangeEvent e) {
 								if("progress".equals(e.getPropertyName()))
