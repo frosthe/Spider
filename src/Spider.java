@@ -1,3 +1,7 @@
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -12,11 +16,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.swing.JOptionPane;
+import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
 
 
-public class Spider {
+public class Spider implements Runnable {
 	/*下面根据日期下载人民网上对应日期的所有资料
 	 * url格式如下：
 	 * http://paper.people.com.cn/rmrb/html/2013-03/06/nbs.D110000renmrb_01.htm
@@ -31,10 +36,21 @@ public class Spider {
 	private String yearString;
 	private String monthString;
 	private String dayString;
+	private int currentPage;
+	private int totalPage;
 	private String path;		//生成的最顶层文件夹的路径
 	private String topicUrl;	//专题url前面一部分
 	
+	public int getTotalPage(){
+		return totalPage;
+	}
+	
+	public int getCurrentPage(){
+		return currentPage;
+	}
+	
 	public Spider(String dir,int year,int month,int day) {
+		currentPage = 0;
 		yearString = "" + year;
 		if(month < 10)
 			monthString = "0" + month;
@@ -56,6 +72,7 @@ public class Spider {
 	}
 	
 	public boolean Initial(){
+		totalPage = getNumberOfPages();
 		File file = new File(path);
 		//在下载目录下生成对应日期的一个文件夹
 		if(file.exists()){
@@ -83,14 +100,14 @@ public class Spider {
           //貌似页面请求的时候经常出错，会跳转到付费页面
             int response = con.getResponseCode();
             if(response > 400){
-            	JOptionPane.showMessageDialog(null, "Error " + response +"\n下载之前内容会跳转到付费页面\n导致无法继续获取内容" ,"Sorry",JOptionPane.OK_OPTION);
+            	JOptionPane.showMessageDialog(null, "Error " + response +"\n下载之前内容会跳转到付费页面\n导致无法继续获取内容\n或者今天新闻尚未生成" ,"Sorry",JOptionPane.OK_OPTION);
             	System.exit(-1);
             }
-           /* while(response > 400){
+           /*while(response > 400){
             	con.disconnect();
             	System.out.println("reconnect...");
             	try {
-					Thread.sleep(2000);
+					Thread.sleep(15000);
 					con = (HttpURLConnection)url.openConnection();
 	    			con.setConnectTimeout(60000);  
 	                con.setReadTimeout(60000); 
@@ -263,6 +280,7 @@ public class Spider {
 			System.out.println(picUrl);
 			String picPath = topicPath + count + ".jpg";
 			File imgToFile = new File(picPath);
+			System.out.println("pic downloaded");
 			try {
 				FileOutputStream out = new FileOutputStream(imgToFile);
 				out.write(getPic(picUrl));
@@ -298,10 +316,8 @@ public class Spider {
         return fileData;  
     } 
     
-	public boolean beginDownload(){
-		int pageNum = getNumberOfPages();
-		
-		for(int i = 1;i <= pageNum;i++){
+	public void run() {
+		for(int i = 1;i <= totalPage;i++){
 			int topicNum = getNumberOfTopics(i);
 			String filePathString = null;
 			if(i < 10)
@@ -317,10 +333,11 @@ public class Spider {
 			for(int k = 1;k <= topicNum;k++){
 				if(!topicParser(i, k)){
 					System.err.println("topicParser error!");
-					return false;
 				}
 			}
+			currentPage++;
 		}
-		return true;
+		JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
 	}
+	
 }

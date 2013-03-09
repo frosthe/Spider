@@ -11,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
 public class MainFrame extends JFrame {
@@ -34,10 +35,12 @@ public class MainFrame extends JFrame {
 		dirField.setEditable(false);
 		dirField.setText("C:\\");
 		final JButton browse = new JButton("浏览");
+		final JProgressBar bar = new JProgressBar(JProgressBar.HORIZONTAL);
+		
 		
 		
 		/*next set the layout*/
-		frame.setLayout(new GridLayout(2,1));
+		frame.setLayout(new GridLayout(3,1));
 		
 		//the panel above
 		//year
@@ -125,10 +128,21 @@ public class MainFrame extends JFrame {
 					if(!checkDate(yearNow, monthNow, dayNow, yearInput, monthInput, dayInput))
 						JOptionPane.showMessageDialog(null,"日期输入有误，请重新输入","Warning!",JOptionPane.ERROR_MESSAGE);
 					else {
-						Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
+						final Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
 						if(spider.Initial()){
-							if(spider.beginDownload())
-								JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
+							bar.setMinimum(0);
+							bar.setMaximum(spider.getTotalPage());
+							new Thread(spider).start();
+							new Thread(new Runnable() {
+								public void run() {
+									try {
+										Thread.sleep(100);
+										bar.setValue(spider.getCurrentPage());
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+								}
+							}).start();
 						}
 					}
 				}
@@ -148,7 +162,7 @@ public class MainFrame extends JFrame {
 		dir.add(dirLabel);
 		dir.add(dirField);
 		
-		//penal below
+		//panel middle
 		JPanel panel2 = new JPanel();
 		/*add actionListen here*/
 		browse.addActionListener(new ActionListener() {
@@ -164,13 +178,18 @@ public class MainFrame extends JFrame {
 			}
 		});
 		panel2.add(browse);
+		JPanel middle = new JPanel(new BorderLayout());
+		middle.add(dir, BorderLayout.CENTER);
+		middle.add(panel2,BorderLayout.EAST);
+		frame.add(middle);
+		
+		//panel below
 		JPanel below = new JPanel(new BorderLayout());
-		below.add(dir, BorderLayout.CENTER);
-		below.add(panel2,BorderLayout.EAST);
+		below.add(bar,BorderLayout.CENTER);
 		frame.add(below);
 		
 		//show the window
-		frame.setSize(400,110);
+		frame.setSize(400,140);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
