@@ -19,9 +19,10 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 
-public class Spider implements Runnable {
+public class Spider extends SwingWorker<Integer, Integer> implements Runnable {
 	/*下面根据日期下载人民网上对应日期的所有资料
 	 * url格式如下：
 	 * http://paper.people.com.cn/rmrb/html/2013-03/06/nbs.D110000renmrb_01.htm
@@ -40,17 +41,10 @@ public class Spider implements Runnable {
 	private int totalPage;
 	private String path;		//生成的最顶层文件夹的路径
 	private String topicUrl;	//专题url前面一部分
-	
-	public int getTotalPage(){
-		return totalPage;
-	}
-	
-	public int getCurrentPage(){
-		return currentPage;
-	}
-	
+
 	public Spider(String dir,int year,int month,int day) {
 		currentPage = 0;
+		totalPage = 0;
 		yearString = "" + year;
 		if(month < 10)
 			monthString = "0" + month;
@@ -71,7 +65,7 @@ public class Spider implements Runnable {
 		topicUrl = stringBuffer.toString();
 	}
 	
-	public boolean Initial(){
+	private boolean Initial(){
 		totalPage = getNumberOfPages();
 		File file = new File(path);
 		//在下载目录下生成对应日期的一个文件夹
@@ -316,7 +310,35 @@ public class Spider implements Runnable {
         return fileData;  
     } 
     
-	public void run() {
+    protected Integer doInBackground(){
+		Initial();
+		
+		for(int i = 1;i <= totalPage;i++){
+			int topicNum = getNumberOfTopics(i);
+			String filePathString = null;
+			if(i < 10)
+				filePathString = path + "\\" + "0" + i;
+			else
+				filePathString = path + "\\" + i;
+			
+			if(!makeFile(filePathString)){
+				System.err.println("fail to make file!");
+				System.exit(-1);
+			}
+			
+			for(int k = 1;k <= topicNum;k++){
+				if(!topicParser(i, k)){
+					System.err.println("topicParser error!");
+				}
+			}
+			currentPage++;
+			setProgress(100 * currentPage / totalPage);
+		}
+		JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
+		return 0;
+	}
+    
+	/*public void run() {
 		for(int i = 1;i <= totalPage;i++){
 			int topicNum = getNumberOfTopics(i);
 			String filePathString = null;
@@ -338,6 +360,6 @@ public class Spider implements Runnable {
 			currentPage++;
 		}
 		JOptionPane.showMessageDialog(null, "下载完成","Congratulation",JOptionPane.OK_OPTION);
-	}
+	}*/
 	
 }

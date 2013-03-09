@@ -2,6 +2,8 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.Calendar;
 
@@ -36,6 +38,9 @@ public class MainFrame extends JFrame {
 		dirField.setText("C:\\");
 		final JButton browse = new JButton("浏览");
 		final JProgressBar bar = new JProgressBar(JProgressBar.HORIZONTAL);
+		bar.setValue(0);
+		bar.setMaximum(100);
+		bar.setStringPainted(true);
 		
 		
 		
@@ -128,22 +133,14 @@ public class MainFrame extends JFrame {
 					if(!checkDate(yearNow, monthNow, dayNow, yearInput, monthInput, dayInput))
 						JOptionPane.showMessageDialog(null,"日期输入有误，请重新输入","Warning!",JOptionPane.ERROR_MESSAGE);
 					else {
-						final Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
-						if(spider.Initial()){
-							bar.setMinimum(0);
-							bar.setMaximum(spider.getTotalPage());
-							new Thread(spider).start();
-							new Thread(new Runnable() {
-								public void run() {
-									try {
-										Thread.sleep(100);
-										bar.setValue(spider.getCurrentPage());
-									} catch (InterruptedException e) {
-										e.printStackTrace();
-									}
-								}
-							}).start();
-						}
+						Spider spider = new Spider(dirField.getText(), yearInput, monthInput, dayInput);
+						spider.addPropertyChangeListener(new PropertyChangeListener() {
+							public void propertyChange(PropertyChangeEvent e) {
+								if("progress".equals(e.getPropertyName()))
+									bar.setValue((Integer)e.getNewValue());
+							}
+						});
+						spider.execute();
 					}
 				}
 			}
